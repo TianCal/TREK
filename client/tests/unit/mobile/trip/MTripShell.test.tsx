@@ -202,6 +202,31 @@ describe('MTripShell', () => {
     expect(screen.queryByRole('button', { name: 'Sat 2' })).not.toBeInTheDocument()
   })
 
+  it.each([1, 2])('seeds after loading trip %s even when the previous selection was present on mount', (tripId) => {
+    const { planner, rerenderShell } = renderShell({ tripId } as Partial<TripPlanner>)
+    planner.isLoading = true
+    planner.trip = null
+    planner.days = []
+    planner.selectedDayId = null
+    rerenderShell()
+
+    planner.isLoading = false
+    planner.trip = { id: tripId } as TripPlanner['trip']
+    planner.days = [
+      { id: 21, trip_id: tripId, day_number: 1, date: '2099-11-13' },
+      { id: 22, trip_id: tripId, day_number: 2, date: '2099-11-14' },
+    ] as Day[]
+    rerenderShell()
+    expect(planner.tripActions.setSelectedDay).toHaveBeenCalledWith(21)
+
+    vi.mocked(planner.tripActions.setSelectedDay).mockClear()
+    planner.selectedDayId = 21
+    rerenderShell()
+    planner.selectedDayId = null
+    rerenderShell()
+    expect(planner.tripActions.setSelectedDay).not.toHaveBeenCalled()
+  })
+
   it('FE-MOB-SHELL-008: the back button leaves for the dashboard', () => {
     const { planner } = renderShell()
     fireEvent.click(screen.getByRole('button', { name: 'common.back' }))

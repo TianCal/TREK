@@ -237,19 +237,26 @@ export default function MTripShell({
   // today while the trip is running, otherwise on the next day that is still
   // ahead — a gap in the dates should not throw you back to day 1 — and fall
   // back to the first day once the whole trip is behind us.
-  const seededDayRef = useRef(false)
+  const seededDayRef = useRef<number | null>(null)
   useEffect(() => {
-    if (seededDayRef.current) return
+    // A mount can still see the previous trip's store snapshot before loadTrip
+    // clears it. Loading must re-arm seeding, including when reopening the same
+    // trip; only the hydrated trip may consume this guard.
+    if (planner.isLoading || !trip || trip.id !== tripId) {
+      seededDayRef.current = null
+      return
+    }
+    if (seededDayRef.current === tripId) return
     // A day that is already active counts as seeded: a later deselect is the
     // user's, and re-seeding it here would be exactly the fight this guard
     // exists to avoid.
-    if (planner.selectedDayId != null) { seededDayRef.current = true; return }
+    if (planner.selectedDayId != null) { seededDayRef.current = tripId; return }
     if (days.length === 0) return
-    seededDayRef.current = true
+    seededDayRef.current = tripId
     // Off the same helper file as the desktop day plan (#1567), so the two
     // cannot drift on what "today" means.
     planner.tripActions.setSelectedDay(findFocusDayId(days) ?? days[0].id)
-  }, [planner.selectedDayId, days, planner.tripActions])
+  }, [tripId, trip, planner.isLoading, planner.selectedDayId, days, planner.tripActions])
 
   // Swiping the day panel (#2051) can move the day well past the chips on
   // screen — the rail overflows from roughly six days on — so the active chip

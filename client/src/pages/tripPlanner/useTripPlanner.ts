@@ -2586,7 +2586,7 @@ export function useTripPlanner() {
   const [splashDone, setSplashDone] = useState(false)
   useEffect(() => {
     if (!isLoading && trip) {
-      const timer = setTimeout(() => setSplashDone(true), 1500)
+      const timer = setTimeout(() => setSplashDone(true), 500)
       return () => clearTimeout(timer)
     }
   }, [isLoading, trip])
